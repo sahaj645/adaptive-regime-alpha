@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Copyrighted papers and large raw inputs — never commit
+*.pdf
+data/raw/
+*_pit_*.csv
+
+# Reproducible, regenerable artifacts
+data/processed/
+outputs/
+
+# OS / editor
+.DS_Store
+.ipynb_checkpoints/
+.vscode/

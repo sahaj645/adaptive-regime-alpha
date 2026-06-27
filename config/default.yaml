@@ -1,0 +1,52 @@
+# All tunable parameters for the regime-switching SPY overlay.
+seed: 0
+
+data:
+  etf_file: data/etf_ohlcv.csv
+  raw_pit_dir: data/raw            # sp{500,400,600}_pit_*.csv (git-ignored)
+  processed_dir: data/processed
+  trade_asset: SPY
+  benchmark_asset: SPY
+  exclude_etfs: [XLC]              # late-listed (2018), dropped for constant N
+
+constituents:
+  gics_level: GICS_Ind_Group       # cross-section granularity for the AR
+  weighting: cap                   # cap | equal
+  split_threshold: 0.10            # |dShares| above this => use cap return (split-neutral)
+  winsor_low: -0.50
+  winsor_high: 0.75
+  max_gap_days: 7
+
+absorption_ratio:
+  window: 252                      # trailing covariance window (days)
+  n_components: 5                  # principal components in the numerator (~N/5)
+  shift_window: 252                # standardized-shift normalization window (1y)
+  short_ma: 15                     # standardized-shift short moving average
+
+jump_model:
+  burn_in: 150                     # drop initial days (slow-EWMA warm-up)
+  n_states: 2
+  halflife_downside_dev: 10
+  halflife_sortino_short: 20
+  halflife_sortino_long: 60
+  halflife_trend: 120
+  lambda_grid: [5, 10, 20, 40, 80, 160]
+  cv_folds: 3
+  cv_val_days: 126
+  cv_embargo: 21
+  n_seeds: 3
+
+backtest:
+  oos_start: "2020-01-01"
+  first_train_year: 2019
+  last_year: 2025
+  trade_delay: 1                   # regime at close t -> traded t+delay
+  cost_bps: 2.0
+
+evaluation:
+  bootstrap_n: 4000
+  block_size: 21
+  trading_days: 252
+
+paths:
+  results_dir: results

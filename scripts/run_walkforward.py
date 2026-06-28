@@ -36,12 +36,13 @@ def main() -> None:
         return pos, pnl(pos, asset_ret, b.trade_delay, b.cost_bps), lam
 
     pos_f, ret_f, lam_f = run(fused)
-    _,     ret_j, lam_j = run(jm)
+    pos_j, ret_j, lam_j = run(jm)
     bench = asset_ret.loc[b.oos_start:]
 
     res = Path(cfg.results_dir); res.mkdir(parents=True, exist_ok=True)
     pd.DataFrame({"BuyHold": bench, "JM_only": ret_j, "Fused_PIT": ret_f}).to_csv(res / "oos_returns.csv")
     pos_f.to_frame("position").to_csv(res / "positions_fused.csv")
+    pos_j.to_frame("position").to_csv(res / "positions_jm.csv")
     (res / "lambda_by_year.json").write_text(json.dumps({"fused": lam_f, "jm_only": lam_j}, default=int, indent=2))
     log.info("wrote %s", res / "oos_returns.csv")
 

@@ -64,6 +64,64 @@ buy-and-hold on a risk-adjusted basis** in this configuration (Sharpe difference
 unstable across reasonable choices (~0.5-0.9; see Known limitations). The robust,
 repeatable property is drawdown reduction, not a Sharpe edge.
 
+## Levers (beyond the mandate)
+
+The binary 0/1 cash overlay is the deliverable. These levers deliberately relax
+that brief to chase a higher Sharpe; each is built as a pure overlay in
+`src/levers/`, priced through the *same* no-look-ahead pnl engine (t+1, cost on
+turnover), and swept so its marginal effect is visible in isolation. Run with
+`python scripts/run_levers.py` -> `results/levers/`.
+
+**Lever 1 - volatility targeting (continuous sizing).** Size each day as
+`base_signal x clip(target_vol / trailing_20d_realized_vol, 0, cap)`; the vol
+estimate uses only data up to day t. Sweep of target vol x leverage cap, OOS
+2020-2025 (buy-hold Sharpe 0.78 for reference):
+
+| Base | Config | CAGR | Vol | Sharpe | Sortino | MaxDD |
+|------|--------|------|-----|--------|---------|-------|
+| JM-only | binary (un-levered) | 6.5% | 10.4% | 0.65 | 0.61 | -17.6% |
+| JM-only | target 10%, cap 1.0 | 5.9% | 8.2% | **0.74** | 0.72 | **-11.2%** |
+| JM-only | target 20%, cap 1.5 | 10.2% | 14.2% | 0.76 | 0.75 | -19.6% |
+| Fused | binary (un-levered) | 7.1% | 12.3% | 0.62 | 0.61 | -21.8% |
+| Fused | target 10%, cap 1.0 | 6.1% | 8.7% | 0.72 | 0.76 | -9.5% |
+
+Vol targeting lifts the jump model's Sharpe ~0.65 -> ~0.74-0.76 and Sortino
+0.61 -> ~0.72. The cleanest gain needs **no leverage at all** (cap 1.0, target
+10%): Sharpe up *and* drawdown nearly halved (-17.6% -> -11.2%), just by holding
+less risk when realized vol is high. Pushing leverage (cap 1.5-2.0, target 20%)
+buys CAGR, not Sharpe - the extra turnover cost and added vol roughly cancel the
+return. The edge vs buy-hold is still inside the bootstrap noise band
+(best config dSharpe ~-0.02, 95% CI spans zero), consistent with the short
+sample; the robust, repeatable property remains drawdown reduction.
+
+## Stress test - submission config (JM + vol-target + cash on SPY)
+
+The closest-to-mandate config (target 10%, cap 1.0 = no leverage, 20d vol window,
+t+1, 2bps, T-bill cash) is stress-tested one dimension at a time
+(`python scripts/stress_test.py` -> `results/levers/stress_submission.*`).
+Baseline Sharpe 0.89 vs buy-hold 0.78.
+
+| Dimension | Range tested | Sharpe range | Read |
+|-----------|--------------|--------------|------|
+| Transaction cost | 0 - 20 bps | 0.90 -> 0.78 | survives realistic cost; =buy-hold only at a punitive 20bps |
+| Vol window | 10 - 60 d | 0.79 - 0.89 | mild; 20d best, all hold up |
+| Target vol | 8 - 20% | 0.90 - 0.78 | lower target = higher Sharpe (de-risking helps), monotonic |
+| Cash-rate assumption | 0% - double | 0.74 - 1.04 | ~0.15 of the lift is cash interest; rate-regime dependent |
+| Execution lag | t+1 / t+2 | 0.89 / 0.92 | robust to timing |
+| k-means seeds | 3 seed sets | 0.85 - 0.89 | stable (±0.04) |
+
+**Subperiods (config vs buy-hold Sharpe):** COVID 2020-21 +1.17 vs +0.96;
+2022 bear -0.47 vs -0.71; 2023-25 bull +0.93 vs +1.43. The config wins in *both*
+drawdown episodes (downside protection, max DD ~-7% in each) and gives up upside
+in the calm bull - a consistent risk-managed profile, not a one-period fluke.
+
+**Honest limits:** (1) the edge over buy-hold is still not statistically
+significant - dSharpe +0.11, 95% bootstrap CI [-0.64,+0.85], P(win) 57% (short,
+two-episode sample). (2) ~0.15 Sharpe of the improvement is cash interest, which
+disappears in a zero-rate world (the 0% row = 0.74). The robust, repeatable
+property remains drawdown reduction; the Sharpe lift is real but not provable on
+this sample.
+
 ## Reproduction
 
 ```bash

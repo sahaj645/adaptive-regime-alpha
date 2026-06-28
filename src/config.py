@@ -47,6 +47,12 @@ class EvaluationCfg:
 
 
 @dataclass(frozen=True)
+class LeversCfg:
+    vol_window: int; target_vols: List[float]; caps: List[float]
+    risk_free_by_year: dict; multi_asset: List[str]; multi_asset_lambda: int
+
+
+@dataclass(frozen=True)
 class Config:
     seed: int
     data: DataCfg
@@ -55,6 +61,7 @@ class Config:
     jump_model: JumpModelCfg
     backtest: BacktestCfg
     evaluation: EvaluationCfg
+    levers: LeversCfg
     results_dir: str
 
     @staticmethod
@@ -68,6 +75,7 @@ class Config:
             jump_model=JumpModelCfg(**d["jump_model"]),
             backtest=BacktestCfg(**d["backtest"]),
             evaluation=EvaluationCfg(**d["evaluation"]),
+            levers=LeversCfg(**d["levers"]),
             results_dir=d["paths"]["results_dir"],
         )
 

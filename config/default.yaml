@@ -50,3 +50,26 @@ evaluation:
 
 paths:
   results_dir: results
+
+levers:
+  # Lever 1 - volatility targeting (continuous sizing). Relaxes the binary 0/1
+  # mandate: size = base_signal * clip(target_vol / trailing_realized_vol, 0, cap).
+  vol_window: 20                   # trailing days for realized-vol estimate (causal)
+  target_vols: [0.10, 0.15, 0.20]  # annualized vol levels to scale toward
+  caps: [1.0, 1.5, 2.0]            # max daily position (leverage knob)
+
+  # Lever 2 - cash yield. Risk-free carry earned on the uninvested fraction
+  # (and paid as financing on any leverage). Annual 3-month T-bill averages
+  # (FRED TB3MS/DGS3MO); ASSUMPTION - no rates series was in the data dump, so
+  # swap an exact daily series here for production.
+  risk_free_by_year:
+    2020: 0.0036
+    2021: 0.0004
+    2022: 0.0202
+    2023: 0.0513
+    2024: 0.0500
+    2025: 0.0400
+  # Lever 3 - multi-asset overlay. Same JM regime filter run per asset, combined
+  # equal-weight. XLC excluded (late 2018 listing); XLRE kept.
+  multi_asset: [SPY, QQQ, XLB, XLE, XLF, XLI, XLK, XLP, XLRE, XLU, XLV, XLY]
+  multi_asset_lambda: 40           # fixed JM penalty across basket (no per-asset CV)
